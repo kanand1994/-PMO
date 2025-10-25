@@ -7,8 +7,8 @@ echo    PLAN MY OUTINGS - SERVICE STARTUP MANAGER
 echo ===============================================
 echo.
 
-set BACKEND_DIR=backend
-set FRONTEND_DIR=frontend
+set BACKEND_DIR=plan-my-outings\backend
+set FRONTEND_DIR=plan-my-outings\frontend
 set BACKEND_PORT=5000
 set FRONTEND_PORT=3000
 

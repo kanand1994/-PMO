@@ -7,7 +7,7 @@ echo    DATABASE MANAGEMENT TOOLS
 echo ===============================================
 echo.
 
-set BACKEND_DIR=backend\instance
+set BACKEND_DIR=plan-my-outings\backend\instance
 
 :menu
 cls

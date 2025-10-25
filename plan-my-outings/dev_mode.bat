@@ -7,8 +7,8 @@ echo    PLAN MY OUTINGS - DEVELOPMENT MODE
 echo ===============================================
 echo.
 
-set BACKEND_DIR=backend
-set FRONTEND_DIR=frontend
+set BACKEND_DIR=plan-my-outings\backend
+set FRONTEND_DIR=plan-my-outings\frontend
 
 echo Starting in Development Mode with auto-reload...
 echo.
