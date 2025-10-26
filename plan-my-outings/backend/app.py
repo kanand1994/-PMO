@@ -184,25 +184,60 @@ def contact_enquiry():
             try:
                 # Send credentials to user
                 user_msg = Message(
-                    subject='Welcome to Plan My Outings - Your Account Details',
+                    subject='🎉 Welcome to Plan My Outings - Account Created!',
                     sender=app.config['MAIL_USERNAME'],
                     recipients=[user.email]
                 )
                 user_msg.body = f"""
-Hello {user.first_name},
+🎉 Welcome to Plan My Outings, {user.first_name}!
+============================================
 
-Welcome to Plan My Outings! Your account has been created successfully.
+Congratulations! Your account has been created successfully.
 
-Your Login Details:
+👤 YOUR ACCOUNT DETAILS
+------------------------
+Name: {user.first_name} {user.last_name}
+Email: {user.email}
 Username: {user.username}
 Password: {password}
 
-You can now login at: http://localhost:3000/login
+🚀 GET STARTED
+--------------
+1. Login to your account: http://localhost:3000/login
+2. Create or join groups with friends
+3. Plan amazing outings together
+4. Vote on activities and locations
 
-Start planning amazing outings with your friends!
+🔐 SECURITY TIPS
+----------------
+• Keep your login credentials safe
+• Don't share your password with others
+• You can change your password after logging in
+
+📱 FEATURES AVAILABLE
+--------------------
+✅ Create and manage groups
+✅ Plan events and outings
+✅ Vote on activities
+✅ Get weather forecasts
+✅ Find places and restaurants
+✅ Invite friends to join
+
+🆘 NEED HELP?
+-------------
+If you have any questions or need assistance:
+• Visit our help section in the app
+• Contact support through the app
+
+Thank you for joining Plan My Outings!
+Start creating memorable experiences with your friends today.
 
 Best regards,
-Plan My Outings Team
+The Plan My Outings Team
+
+---
+This email was sent to {user.email}
+If you didn't create this account, please ignore this email.
                 """
                 mail.send(user_msg)
                 

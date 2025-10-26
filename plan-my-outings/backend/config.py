@@ -9,11 +9,25 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Email configuration
-    MAIL_SERVER = os.environ.get('MAIL_SERVER') or 'smtp.office365.com'
+    MAIL_SERVER = os.environ.get('MAIL_SERVER') or 'smtp.gmail.com'
     MAIL_PORT = int(os.environ.get('MAIL_PORT') or 587)
     MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'True').lower() == 'true'
     MAIL_USE_SSL = os.environ.get('MAIL_USE_SSL', 'False').lower() == 'true'
-    MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
+    
+    # Decrypt email username if encrypted
+    @staticmethod
+    def _decrypt_email_username():
+        username = os.environ.get('MAIL_USERNAME')
+        if username and username.startswith('ENC:'):
+            try:
+                from encryption_utils import decrypt_env_password
+                return decrypt_env_password(username)
+            except Exception as e:
+                print(f"Error decrypting email username: {e}")
+                return None
+        return username
+    
+    MAIL_USERNAME = _decrypt_email_username()
     
     # Decrypt email password if encrypted
     @staticmethod
