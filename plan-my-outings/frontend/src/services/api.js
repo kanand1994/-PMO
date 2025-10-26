@@ -52,4 +52,13 @@ export const pollsAPI = {
     api.post(`/polls/${pollId}/vote`, data),
 };
 
+export const adminAPI = {
+  getStats: () => api.get('/admin/stats'),
+  getEmailLogs: () => api.get('/admin/email-logs'),
+  getRecentUsers: () => api.get('/admin/recent-users'),
+  getSystemActivity: () => api.get('/admin/system-activity'),
+  clearDemoData: () => api.post('/admin/clear-demo-data'),
+  resendEmail: (userId) => api.post('/admin/resend-email', { user_id: userId }),
+};
+
 export default api;

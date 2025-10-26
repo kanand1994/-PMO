@@ -6,6 +6,7 @@ from auth import token_required, generate_token
 from api_services import GooglePlacesService, TMDBService, OpenWeatherService
 from socket_events import socketio
 from config import Config
+from email_tracking import EmailLog, EmailTracker
 import json
 
 app = Flask(__name__)
@@ -181,10 +182,11 @@ def contact_enquiry():
         
         # Send email with credentials and admin notification
         if app.config['MAIL_USERNAME'] and app.config['MAIL_PASSWORD']:
+            # Send credentials to user
+            user_subject = '🎉 Welcome to Plan My Outings - Account Created!'
             try:
-                # Send credentials to user
                 user_msg = Message(
-                    subject='🎉 Welcome to Plan My Outings - Account Created!',
+                    subject=user_subject,
                     sender=app.config['MAIL_USERNAME'],
                     recipients=[user.email]
                 )
@@ -240,10 +242,20 @@ This email was sent to {user.email}
 If you didn't create this account, please ignore this email.
                 """
                 mail.send(user_msg)
+                # Log successful email
+                EmailTracker.log_email_sent(user.email, user_subject, 'welcome', user.id)
                 
-                # Send notification to admin
+            except Exception as e:
+                # Log failed email
+                EmailTracker.log_email_failed(user.email, user_subject, 'welcome', str(e), user.id)
+                import logging
+                logging.error(f"User email sending failed: {str(e)}")
+            
+            # Send notification to admin
+            admin_subject = 'New User Registration - Plan My Outings'
+            try:
                 admin_msg = Message(
-                    subject='New User Registration - Plan My Outings',
+                    subject=admin_subject,
                     sender=app.config['MAIL_USERNAME'],
                     recipients=[app.config['SUPER_ADMIN_EMAIL'] or app.config['MAIL_USERNAME']]
                 )
@@ -263,12 +275,14 @@ Total Users: {User.query.count()}
 Admin Dashboard: http://localhost:3000/admin
                 """
                 mail.send(admin_msg)
+                # Log successful admin email
+                EmailTracker.log_email_sent(app.config['SUPER_ADMIN_EMAIL'], admin_subject, 'admin_notification')
                 
             except Exception as e:
-                # Log error silently, don't show to user
+                # Log failed admin email
+                EmailTracker.log_email_failed(app.config['SUPER_ADMIN_EMAIL'], admin_subject, 'admin_notification', str(e))
                 import logging
-                logging.error(f"Email sending failed: {str(e)}")
-                # Continue without showing error to user
+                logging.error(f"Admin email sending failed: {str(e)}")
         
         return jsonify({
             'message': 'Enquiry submitted!',
@@ -490,6 +504,172 @@ def get_system_activity(current_user):
     except Exception as e:
         return jsonify({'message': f'Error fetching system activity: {str(e)}'}), 500
 
+# Email tracking endpoints
+@app.route('/api/admin/email-logs', methods=['GET'])
+@token_required
+def get_email_logs(current_user):
+    # Check if user is super admin
+    if current_user.username != Config.SUPER_ADMIN_USERNAME:
+        return jsonify({'message': 'Admin access required!'}), 403
+    
+    try:
+        # Get recent email logs
+        recent_emails = EmailTracker.get_recent_emails(50)
+        email_stats = EmailTracker.get_email_stats()
+        
+        email_data = {
+            'stats': email_stats,
+            'recent_emails': [{
+                'id': email.id,
+                'recipient': email.recipient_email,
+                'subject': email.subject,
+                'type': email.email_type,
+                'status': email.status,
+                'error': email.error_message,
+                'sent_at': email.sent_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'user_id': email.user_id
+            } for email in recent_emails]
+        }
+        
+        return jsonify(email_data)
+        
+    except Exception as e:
+        return jsonify({'message': f'Error fetching email logs: {str(e)}'}), 500
+
+@app.route('/api/admin/clear-demo-data', methods=['POST'])
+@token_required
+def clear_demo_data(current_user):
+    # Check if user is super admin
+    if current_user.username != Config.SUPER_ADMIN_USERNAME:
+        return jsonify({'message': 'Admin access required!'}), 403
+    
+    try:
+        # Clear demo data (keep super admin)
+        deleted_counts = {}
+        
+        # Delete email logs
+        deleted_counts['email_logs'] = EmailLog.query.delete()
+        
+        # Delete votes
+        deleted_counts['votes'] = Vote.query.delete()
+        
+        # Delete event options
+        deleted_counts['event_options'] = EventOption.query.delete()
+        
+        # Delete polls
+        deleted_counts['polls'] = Poll.query.delete()
+        
+        # Delete group members
+        deleted_counts['group_members'] = GroupMember.query.delete()
+        
+        # Delete events
+        deleted_counts['events'] = Event.query.delete()
+        
+        # Delete groups
+        deleted_counts['groups'] = Group.query.delete()
+        
+        # Delete enquiries
+        deleted_counts['enquiries'] = Enquiry.query.delete()
+        
+        # Delete users (except super admin)
+        deleted_counts['users'] = User.query.filter(User.username != Config.SUPER_ADMIN_USERNAME).delete()
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Demo data cleared successfully!',
+            'deleted_counts': deleted_counts
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': f'Error clearing demo data: {str(e)}'}), 500
+
+@app.route('/api/admin/resend-email', methods=['POST'])
+@token_required
+def resend_email(current_user):
+    # Check if user is super admin
+    if current_user.username != Config.SUPER_ADMIN_USERNAME:
+        return jsonify({'message': 'Admin access required!'}), 403
+    
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id')
+        
+        if not user_id:
+            return jsonify({'message': 'User ID required!'}), 400
+        
+        # Get user details
+        user = db.session.get(User, user_id)
+        if not user:
+            return jsonify({'message': 'User not found!'}), 404
+        
+        # Generate new password
+        from database import generate_random_password
+        new_password = generate_random_password()
+        user.password = new_password
+        db.session.commit()
+        
+        # Send welcome email with new password
+        subject = '🎉 Plan My Outings - Account Credentials (Resent)'
+        try:
+            user_msg = Message(
+                subject=subject,
+                sender=app.config['MAIL_USERNAME'],
+                recipients=[user.email]
+            )
+            user_msg.body = f"""
+🎉 Welcome to Plan My Outings, {user.first_name}!
+============================================
+
+Your account credentials have been resent as requested.
+
+👤 YOUR ACCOUNT DETAILS
+------------------------
+Name: {user.first_name} {user.last_name}
+Email: {user.email}
+Username: {user.username}
+Password: {new_password} (NEW PASSWORD)
+
+🚀 GET STARTED
+--------------
+1. Login to your account: http://localhost:3000/login
+2. Create or join groups with friends
+3. Plan amazing outings together
+4. Vote on activities and locations
+
+🔐 SECURITY TIPS
+----------------
+• Keep your login credentials safe
+• Don't share your password with others
+• You can change your password after logging in
+
+Thank you for using Plan My Outings!
+
+Best regards,
+The Plan My Outings Team
+
+---
+This email was resent to {user.email} by system administrator.
+            """
+            
+            mail.send(user_msg)
+            # Log successful resend
+            EmailTracker.log_email_sent(user.email, subject, 'resend', user.id)
+            
+            return jsonify({
+                'message': 'Email resent successfully!',
+                'new_password': new_password
+            })
+            
+        except Exception as e:
+            # Log failed resend
+            EmailTracker.log_email_failed(user.email, subject, 'resend', str(e), user.id)
+            return jsonify({'message': f'Failed to resend email: {str(e)}'}), 500
+        
+    except Exception as e:
+        return jsonify({'message': f'Error resending email: {str(e)}'}), 500
+
 def create_super_admin():
     """Create super admin account if it doesn't exist"""
     try:
@@ -534,8 +714,12 @@ Keep these credentials secure!
 Plan My Outings System
                     """
                     mail.send(msg)
+                    # Log super admin email
+                    EmailTracker.log_email_sent(app.config['SUPER_ADMIN_EMAIL'], 'Plan My Outings - Super Admin Account Created', 'admin_setup')
                     print("✅ Super admin welcome email sent")
                 except Exception as e:
+                    # Log failed super admin email
+                    EmailTracker.log_email_failed(app.config['SUPER_ADMIN_EMAIL'], 'Plan My Outings - Super Admin Account Created', 'admin_setup', str(e))
                     print(f"⚠️ Could not send super admin email: {e}")
         else:
             print(f"ℹ️ Super admin already exists: {app.config['SUPER_ADMIN_USERNAME']}")

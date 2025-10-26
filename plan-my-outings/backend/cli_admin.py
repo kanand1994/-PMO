@@ -52,7 +52,9 @@ class CLIAdmin:
         print("8.  💾 Database Management (CRUD)")
         print("9.  📧 Send Admin Email")
         print("10. 🔐 Test Email (Send Super Admin Credentials)")
-        print("11. 🔄 Refresh Data")
+        print("11. 📨 Email Tracking & Logs")
+        print("12. 🗑️  Clear All Demo Data")
+        print("13. 🔄 Refresh Data")
         print("0.  🚪 Exit")
         print("=" * 50)
     
@@ -1347,6 +1349,146 @@ Plan My Outings System
             print(f"\nThe encryption system is working perfectly!")
             print(f"Email issue is just a provider restriction, not your code.")
     
+    def email_tracking(self):
+        """Email tracking and logs management"""
+        print("\n📨 EMAIL TRACKING & LOGS")
+        print("=" * 50)
+        
+        try:
+            from email_tracking import EmailTracker
+            
+            # Get email statistics
+            stats = EmailTracker.get_email_stats()
+            
+            print("📊 EMAIL STATISTICS:")
+            print(f"  Total Emails: {stats['total']}")
+            print(f"  Successfully Sent: {stats['sent']}")
+            print(f"  Failed: {stats['failed']}")
+            print(f"  Success Rate: {stats['success_rate']:.1f}%")
+            print(f"  Last 24 Hours: {stats['recent_24h']}")
+            
+            # Get recent email logs
+            recent_emails = EmailTracker.get_recent_emails(20)
+            
+            if recent_emails:
+                print(f"\n📧 RECENT EMAIL LOGS (Last 20):")
+                print("-" * 80)
+                
+                data = []
+                for email in recent_emails:
+                    status_icon = "✅" if email.status == 'sent' else "❌"
+                    data.append([
+                        email.id,
+                        email.recipient_email[:30] + "..." if len(email.recipient_email) > 30 else email.recipient_email,
+                        email.email_type,
+                        f"{status_icon} {email.status}",
+                        email.sent_at.strftime('%m-%d %H:%M'),
+                        email.error_message[:30] + "..." if email.error_message and len(email.error_message) > 30 else email.error_message or ""
+                    ])
+                
+                headers = ["ID", "Recipient", "Type", "Status", "Sent At", "Error"]
+                print(tabulate(data, headers=headers, tablefmt="grid"))
+            else:
+                print("\n📧 No email logs found.")
+            
+            # Show failed emails details
+            failed_emails = [email for email in recent_emails if email.status == 'failed']
+            if failed_emails:
+                print(f"\n❌ FAILED EMAILS DETAILS:")
+                for email in failed_emails[:5]:  # Show first 5 failed emails
+                    print(f"  • {email.recipient_email} - {email.subject}")
+                    print(f"    Error: {email.error_message}")
+                    print(f"    Time: {email.sent_at.strftime('%Y-%m-%d %H:%M:%S')}")
+                    print()
+            
+        except Exception as e:
+            print(f"❌ Error fetching email logs: {e}")
+        
+        input("\nPress Enter to continue...")
+    
+    def clear_demo_data(self):
+        """Clear all demo data from the system"""
+        print("\n🗑️ CLEAR ALL DEMO DATA")
+        print("=" * 50)
+        print("⚠️ WARNING: This will delete ALL data except the super admin account!")
+        print("This includes:")
+        print("  • All users (except super admin)")
+        print("  • All groups and events")
+        print("  • All enquiries")
+        print("  • All email logs")
+        print("  • All votes and polls")
+        
+        confirm1 = input("\nType 'CLEAR' to continue: ")
+        if confirm1 != 'CLEAR':
+            print("❌ Operation cancelled.")
+            return
+        
+        confirm2 = input("Type 'DELETE ALL DATA' to confirm: ")
+        if confirm2 != 'DELETE ALL DATA':
+            print("❌ Operation cancelled.")
+            return
+        
+        try:
+            from email_tracking import EmailLog
+            
+            print("\n🗑️ Clearing demo data...")
+            deleted_counts = {}
+            
+            # Delete email logs
+            deleted_counts['email_logs'] = EmailLog.query.delete()
+            print(f"  ✅ Deleted {deleted_counts['email_logs']} email logs")
+            
+            # Delete votes
+            deleted_counts['votes'] = Vote.query.delete()
+            print(f"  ✅ Deleted {deleted_counts['votes']} votes")
+            
+            # Delete event options
+            deleted_counts['event_options'] = EventOption.query.delete()
+            print(f"  ✅ Deleted {deleted_counts['event_options']} event options")
+            
+            # Delete polls
+            deleted_counts['polls'] = Poll.query.delete()
+            print(f"  ✅ Deleted {deleted_counts['polls']} polls")
+            
+            # Delete group members
+            deleted_counts['group_members'] = GroupMember.query.delete()
+            print(f"  ✅ Deleted {deleted_counts['group_members']} group memberships")
+            
+            # Delete events
+            deleted_counts['events'] = Event.query.delete()
+            print(f"  ✅ Deleted {deleted_counts['events']} events")
+            
+            # Delete groups
+            deleted_counts['groups'] = Group.query.delete()
+            print(f"  ✅ Deleted {deleted_counts['groups']} groups")
+            
+            # Delete enquiries
+            deleted_counts['enquiries'] = Enquiry.query.delete()
+            print(f"  ✅ Deleted {deleted_counts['enquiries']} enquiries")
+            
+            # Delete users (except super admin)
+            deleted_counts['users'] = User.query.filter(User.username != Config.SUPER_ADMIN_USERNAME).delete()
+            print(f"  ✅ Deleted {deleted_counts['users']} users (kept super admin)")
+            
+            db.session.commit()
+            
+            print(f"\n✅ ALL DEMO DATA CLEARED SUCCESSFULLY!")
+            print(f"📊 Summary:")
+            for key, count in deleted_counts.items():
+                print(f"  • {key.replace('_', ' ').title()}: {count}")
+            
+            print(f"\n🔐 Super admin account preserved:")
+            print(f"  Username: {Config.SUPER_ADMIN_USERNAME}")
+            print(f"  Email: {Config.SUPER_ADMIN_EMAIL}")
+            
+        except Exception as e:
+            db.session.rollback()
+            print(f"❌ Error clearing demo data: {e}")
+            import traceback
+            traceback.print_exc()
+        
+        input("\nPress Enter to continue...")
+    
     def database_management(self):
         """Comprehensive database management with CRUD operations"""
         while True:
@@ -2558,6 +2700,10 @@ Plan My Outings System
             elif choice == '10':
                 self.send_super_admin_credentials()
             elif choice == '11':
+                self.email_tracking()
+            elif choice == '12':
+                self.clear_demo_data()
+            elif choice == '13':
                 print("🔄 Data refreshed!")
             elif choice == '0':
                 print("👋 Goodbye, Super Admin!")
