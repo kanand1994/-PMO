@@ -2,6 +2,14 @@
 
 A smart event planning web application that helps groups decide plans together with suggestions for movies, restaurants, and hangout spots based on preferences.
 
+## 🌐 Live Demo
+
+**Frontend:** [Your Vercel URL will be here]  
+**Backend API:** [Your Render URL will be here]  
+**Admin Dashboard:** [Your Vercel URL]/admin
+
+> **Note:** After deployment, update these URLs in this README
+
 ## Features
 
 - **Auto Account Creation**: No traditional signup - users submit enquiries and get auto-generated credentials
@@ -97,3 +105,51 @@ plan-my-outings/
 │   ├── package.json       # Node.js dependencies
 │   └── .env              # Frontend environment variables
 └── README.md
+
+## 🚀 Unified Deployment - Single URL
+
+Deploy your complete application to **one URL** that serves both frontend and backend!
+
+### ⚡ Deploy Now (5 minutes)
+```bash
+# 1. Build for deployment (already done!)
+build-for-deployment.bat
+
+# 2. Verify build
+python verify-build.py
+
+# 3. Deploy to Render
+```
+See [DEPLOY-NOW.md](DEPLOY-NOW.md) for immediate deployment
+
+### 📖 Detailed Guide
+See [UNIFIED-DEPLOY.md](UNIFIED-DEPLOY.md) for comprehensive instructions
+
+### 🏗️ Unified Architecture
+- **Single URL:** `https://your-app.onrender.com`
+- **Frontend:** Served by Flask at `/`
+- **Backend API:** Available at `/api/*`
+- **Admin Dashboard:** Available at `/admin`
+- **Database:** PostgreSQL (free from Render)
+- **Email:** Gmail SMTP (free)
+- **Cost:** $0 using free tier
+
+### Environment Setup
+- Copy `backend/.env.production.example` for production environment variables
+- Update `frontend/.env.production` with your deployed backend URL
+
+## 🔐 Admin Access
+
+After deployment, access the admin dashboard at `/admin` with your configured super admin credentials to:
+- Monitor email delivery
+- View system statistics
+- Manage users
+- Resend welcome emails
+
+## 📧 Email Features
+
+The application includes comprehensive email tracking:
+- Welcome emails with auto-generated passwords
+- Admin notifications for new registrations
+- Email delivery status monitoring
+- Resend functionality for failed emails

@@ -1,0 +1,30 @@
+{
+  "name": "plan-my-outings",
+  "version": "1.0.0",
+  "description": "A smart event planning web application for groups",
+  "private": true,
+  "scripts": {
+    "install-all": "cd backend && pip install -r requirements.txt && cd ../frontend && npm install",
+    "dev": "concurrently \"cd backend && python app.py\" \"cd frontend && npm start\"",
+    "build": "cd frontend && npm run build",
+    "start-backend": "cd backend && python app.py",
+    "start-frontend": "cd frontend && npm start"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/plan-my-outings.git"
+  },
+  "keywords": [
+    "event-planning",
+    "group-activities",
+    "react",
+    "flask",
+    "python",
+    "javascript"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}
