@@ -5,12 +5,23 @@ load_dotenv()
 
 # Import encryption utilities at module level
 try:
+    import cryptography
     from encryption_utils import decrypt_env_password
     ENCRYPTION_AVAILABLE = True
 except ImportError as e:
-    print(f"Warning: Encryption not available: {e}")
+    # Silently handle missing encryption in development reloader
     ENCRYPTION_AVAILABLE = False
     decrypt_env_password = None
+
+def _decrypt_if_needed(value):
+    """Helper function to decrypt values if they are encrypted"""
+    if value and value.startswith('ENC:') and ENCRYPTION_AVAILABLE:
+        try:
+            return decrypt_env_password(value)
+        except Exception as e:
+            print(f"Warning: Could not decrypt value: {e}")
+            return None
+    return value
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key'
@@ -23,35 +34,9 @@ class Config:
     MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'True').lower() == 'true'
     MAIL_USE_SSL = os.environ.get('MAIL_USE_SSL', 'False').lower() == 'true'
     
-    # Decrypt email username if encrypted
-    @staticmethod
-    def _decrypt_email_username():
-        username = os.environ.get('MAIL_USERNAME')
-        if username and username.startswith('ENC:') and ENCRYPTION_AVAILABLE:
-            try:
-                decrypted = decrypt_env_password(username)
-                return decrypted
-            except Exception as e:
-                print(f"Warning: Could not decrypt email username: {e}")
-                return None
-        return username
-    
-    MAIL_USERNAME = _decrypt_email_username()
-    
-    # Decrypt email password if encrypted
-    @staticmethod
-    def _decrypt_password():
-        password = os.environ.get('MAIL_PASSWORD')
-        if password and password.startswith('ENC:') and ENCRYPTION_AVAILABLE:
-            try:
-                decrypted = decrypt_env_password(password)
-                return decrypted
-            except Exception as e:
-                print(f"Warning: Could not decrypt email password: {e}")
-                return None
-        return password
-    
-    MAIL_PASSWORD = _decrypt_password()
+    # Decrypt email credentials
+    MAIL_USERNAME = _decrypt_if_needed(os.environ.get('MAIL_USERNAME'))
+    MAIL_PASSWORD = _decrypt_if_needed(os.environ.get('MAIL_PASSWORD'))
     
     # API Keys
     GOOGLE_PLACES_API_KEY = os.environ.get('GOOGLE_PLACES_API_KEY')
@@ -59,20 +44,8 @@ class Config:
     OPENWEATHER_API_KEY = os.environ.get('OPENWEATHER_API_KEY')
     
     # Super Admin Configuration (Encrypted)
-    @staticmethod
-    def _decrypt_admin_field(field_name):
-        value = os.environ.get(field_name)
-        if value and value.startswith('ENC:') and ENCRYPTION_AVAILABLE:
-            try:
-                decrypted = decrypt_env_password(value)
-                return decrypted
-            except Exception as e:
-                print(f"Warning: Could not decrypt {field_name}: {e}")
-                return None
-        return value
-    
-    SUPER_ADMIN_EMAIL = _decrypt_admin_field('SUPER_ADMIN_EMAIL')
-    SUPER_ADMIN_USERNAME = _decrypt_admin_field('SUPER_ADMIN_USERNAME')
-    SUPER_ADMIN_PASSWORD = _decrypt_admin_field('SUPER_ADMIN_PASSWORD')
-    SUPER_ADMIN_FIRST_NAME = _decrypt_admin_field('SUPER_ADMIN_FIRST_NAME')
-    SUPER_ADMIN_LAST_NAME = _decrypt_admin_field('SUPER_ADMIN_LAST_NAME')
+    SUPER_ADMIN_EMAIL = _decrypt_if_needed(os.environ.get('SUPER_ADMIN_EMAIL'))
+    SUPER_ADMIN_USERNAME = _decrypt_if_needed(os.environ.get('SUPER_ADMIN_USERNAME'))
+    SUPER_ADMIN_PASSWORD = _decrypt_if_needed(os.environ.get('SUPER_ADMIN_PASSWORD'))
+    SUPER_ADMIN_FIRST_NAME = _decrypt_if_needed(os.environ.get('SUPER_ADMIN_FIRST_NAME'))
+    SUPER_ADMIN_LAST_NAME = _decrypt_if_needed(os.environ.get('SUPER_ADMIN_LAST_NAME'))

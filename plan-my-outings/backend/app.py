@@ -154,9 +154,19 @@ def contact_enquiry():
     try:
         data = request.get_json()
         
+        # Validate required fields
+        required_fields = ['first_name', 'last_name', 'email', 'year_of_birth']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({
+                    'message': f'Missing required field: {field}',
+                    'error': 'validation_error'
+                }), 400
+        
         # Check if user with this email already exists
         existing_user = User.query.filter_by(email=data['email']).first()
         if existing_user:
+            print(f"Duplicate email attempt: {data['email']}")
             return jsonify({
                 'message': 'An account with this email already exists. Please use the login page.',
                 'error': 'duplicate_email'
@@ -179,7 +189,7 @@ def contact_enquiry():
         db.session.commit()
         
         # Send email with credentials and admin notification
-        if app.config['MAIL_USERNAME'] and app.config['MAIL_PASSWORD']:
+        if app.config.get('MAIL_USERNAME') and app.config.get('MAIL_PASSWORD'):
             # Send credentials to user
             user_subject = '🎉 Welcome to Plan My Outings - Account Created!'
             try:
@@ -292,6 +302,9 @@ Admin Dashboard: http://localhost:3000/admin
         
     except Exception as e:
         db.session.rollback()
+        print(f"Contact form error: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'message': f'Error: {str(e)}'}), 500
 
 # Group management
