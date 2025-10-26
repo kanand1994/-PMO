@@ -1,2 +1,0 @@
-# Root level requirements for Render deployment
--r backend/requirements.txt

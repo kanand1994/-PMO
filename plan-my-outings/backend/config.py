@@ -3,6 +3,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Import encryption utilities at module level
+try:
+    from encryption_utils import decrypt_env_password
+    ENCRYPTION_AVAILABLE = True
+except ImportError as e:
+    print(f"Warning: Encryption not available: {e}")
+    ENCRYPTION_AVAILABLE = False
+    decrypt_env_password = None
+
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key'
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///plan_my_outings.db'
@@ -14,40 +23,32 @@ class Config:
     MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'True').lower() == 'true'
     MAIL_USE_SSL = os.environ.get('MAIL_USE_SSL', 'False').lower() == 'true'
     
-    # Decrypt email username if encrypted (only in development)
+    # Decrypt email username if encrypted
     @staticmethod
     def _decrypt_email_username():
         username = os.environ.get('MAIL_USERNAME')
-        # In production, use plain text values
-        if os.environ.get('FLASK_ENV') == 'production':
-            return username
-        # In development, try to decrypt if encrypted
-        if username and username.startswith('ENC:'):
+        if username and username.startswith('ENC:') and ENCRYPTION_AVAILABLE:
             try:
-                from encryption_utils import decrypt_env_password
-                return decrypt_env_password(username)
+                decrypted = decrypt_env_password(username)
+                return decrypted
             except Exception as e:
-                print(f"Error decrypting email username: {e}")
-                return 'outingplanmy@gmail.com'  # fallback
+                print(f"Warning: Could not decrypt email username: {e}")
+                return None
         return username
     
     MAIL_USERNAME = _decrypt_email_username()
     
-    # Decrypt email password if encrypted (only in development)
+    # Decrypt email password if encrypted
     @staticmethod
     def _decrypt_password():
         password = os.environ.get('MAIL_PASSWORD')
-        # In production, use plain text values
-        if os.environ.get('FLASK_ENV') == 'production':
-            return password
-        # In development, try to decrypt if encrypted
-        if password and password.startswith('ENC:'):
+        if password and password.startswith('ENC:') and ENCRYPTION_AVAILABLE:
             try:
-                from encryption_utils import decrypt_env_password
-                return decrypt_env_password(password)
+                decrypted = decrypt_env_password(password)
+                return decrypted
             except Exception as e:
-                print(f"Error decrypting email password: {e}")
-                return 'ckkymhmweqvrtrfz'  # fallback
+                print(f"Warning: Could not decrypt email password: {e}")
+                return None
         return password
     
     MAIL_PASSWORD = _decrypt_password()
@@ -57,25 +58,21 @@ class Config:
     TMDB_API_KEY = os.environ.get('TMDB_API_KEY')
     OPENWEATHER_API_KEY = os.environ.get('OPENWEATHER_API_KEY')
     
-    # Super Admin Configuration (Encrypted in dev, plain text in production)
+    # Super Admin Configuration (Encrypted)
     @staticmethod
-    def _decrypt_admin_field(field_name, fallback_value):
+    def _decrypt_admin_field(field_name):
         value = os.environ.get(field_name)
-        # In production, use plain text values
-        if os.environ.get('FLASK_ENV') == 'production':
-            return value or fallback_value
-        # In development, try to decrypt if encrypted
-        if value and value.startswith('ENC:'):
+        if value and value.startswith('ENC:') and ENCRYPTION_AVAILABLE:
             try:
-                from encryption_utils import decrypt_env_password
-                return decrypt_env_password(value)
+                decrypted = decrypt_env_password(value)
+                return decrypted
             except Exception as e:
-                print(f"Error decrypting {field_name}: {e}")
-                return fallback_value
-        return value or fallback_value
+                print(f"Warning: Could not decrypt {field_name}: {e}")
+                return None
+        return value
     
-    SUPER_ADMIN_EMAIL = _decrypt_admin_field('SUPER_ADMIN_EMAIL', 'planmyouting@outlook.com')
-    SUPER_ADMIN_USERNAME = _decrypt_admin_field('SUPER_ADMIN_USERNAME', 'superadmin')
-    SUPER_ADMIN_PASSWORD = _decrypt_admin_field('SUPER_ADMIN_PASSWORD', 'SuperAdmin@2025')
-    SUPER_ADMIN_FIRST_NAME = _decrypt_admin_field('SUPER_ADMIN_FIRST_NAME', 'Super')
-    SUPER_ADMIN_LAST_NAME = _decrypt_admin_field('SUPER_ADMIN_LAST_NAME', 'Admin')
+    SUPER_ADMIN_EMAIL = _decrypt_admin_field('SUPER_ADMIN_EMAIL')
+    SUPER_ADMIN_USERNAME = _decrypt_admin_field('SUPER_ADMIN_USERNAME')
+    SUPER_ADMIN_PASSWORD = _decrypt_admin_field('SUPER_ADMIN_PASSWORD')
+    SUPER_ADMIN_FIRST_NAME = _decrypt_admin_field('SUPER_ADMIN_FIRST_NAME')
+    SUPER_ADMIN_LAST_NAME = _decrypt_admin_field('SUPER_ADMIN_LAST_NAME')

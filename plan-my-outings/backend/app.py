@@ -5,11 +5,7 @@ from database import db, User, Group, Event, Enquiry, Poll, EventOption, Vote, G
 from auth import token_required, generate_token
 from api_services import GooglePlacesService, TMDBService, OpenWeatherService
 from socket_events import socketio
-import os
-if os.environ.get('FLASK_ENV') == 'production':
-    from config_production import ProductionConfig as Config
-else:
-    from config import Config
+from config import Config
 from email_tracking import EmailLog, EmailTracker
 import json
 
@@ -18,13 +14,12 @@ app.config.from_object(Config)
 
 # Initialize extensions
 db.init_app(app)
-cors_origins = getattr(app.config, 'CORS_ORIGINS', ['*'])
 CORS(app, resources={
-    r"/api/*": {"origins": cors_origins},
-    r"/contact": {"origins": cors_origins},
-    r"/login": {"origins": cors_origins},
-    r"/groups": {"origins": cors_origins},
-    r"/events": {"origins": cors_origins}
+    r"/api/*": {"origins": ["http://localhost:3000"]},
+    r"/contact": {"origins": ["http://localhost:3000"]},
+    r"/login": {"origins": ["http://localhost:3000"]},
+    r"/groups": {"origins": ["http://localhost:3000"]},
+    r"/events": {"origins": ["http://localhost:3000"]}
 })
 socketio.init_app(app)
 mail = Mail(app)
@@ -679,8 +674,7 @@ def create_super_admin():
         # Get super admin username, handle None case
         admin_username = app.config.get('SUPER_ADMIN_USERNAME')
         if not admin_username:
-            print("⚠️ No super admin username configured")
-            return
+            return  # Silently skip if no username configured
             
         # Check if super admin already exists
         super_admin = User.query.filter_by(username=admin_username).first()
@@ -738,41 +732,17 @@ Plan My Outings System
                     # Log failed super admin email
                     EmailTracker.log_email_failed(admin_email, 'Plan My Outings - Super Admin Account Created', 'admin_setup', str(e))
                     print(f"⚠️ Could not send super admin email: {e}")
-        else:
-            print(f"✅ Super admin already exists: {admin_username}")
+        # Super admin already exists - no message needed
             
     except Exception as e:
         print(f"❌ Error creating super admin: {e}")
 
-# Serve React frontend in production
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def serve_frontend(path):
-    """Serve React frontend files"""
-    import os
-    
-    # In production, serve the built React app
-    if os.environ.get('FLASK_ENV') == 'production':
-        frontend_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'frontend', 'build')
-        
-        if path != "" and os.path.exists(os.path.join(frontend_folder, path)):
-            return app.send_static_file(path)
-        else:
-            return app.send_from_directory(frontend_folder, 'index.html')
-    else:
-        # In development, return API info
-        return jsonify({"message": "Plan My Outings API - Development Mode"})
+@app.route('/')
+def home():
+    return jsonify({"message": "Plan My Outings API"})
 
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
         create_super_admin()
-    
-    # Configure static files for production
-    if os.environ.get('FLASK_ENV') == 'production':
-        import os
-        frontend_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'frontend', 'build')
-        app.static_folder = frontend_folder
-        app.static_url_path = ''
-    
     socketio.run(app, debug=True, port=5000)

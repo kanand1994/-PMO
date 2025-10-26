@@ -106,33 +106,25 @@ plan-my-outings/
 │   └── .env              # Frontend environment variables
 └── README.md
 
-## 🚀 Unified Deployment - Single URL
+## 🚀 Local Development
 
-Deploy your complete application to **one URL** that serves both frontend and backend!
+Run your complete application locally for development and testing.
 
-### ⚡ Deploy Now (5 minutes)
+### ⚡ Quick Start
 ```bash
-# 1. Build for deployment (already done!)
-build-for-deployment.bat
+# Start both frontend and backend
+dev_mode.bat
 
-# 2. Verify build
-python verify-build.py
-
-# 3. Deploy to Render
+# Or start individually:
+start_services.bat
 ```
-See [DEPLOY-NOW.md](DEPLOY-NOW.md) for immediate deployment
 
-### 📖 Detailed Guide
-See [UNIFIED-DEPLOY.md](UNIFIED-DEPLOY.md) for comprehensive instructions
-
-### 🏗️ Unified Architecture
-- **Single URL:** `https://your-app.onrender.com`
-- **Frontend:** Served by Flask at `/`
-- **Backend API:** Available at `/api/*`
-- **Admin Dashboard:** Available at `/admin`
-- **Database:** PostgreSQL (free from Render)
-- **Email:** Gmail SMTP (free)
-- **Cost:** $0 using free tier
+### 🏗️ Local Architecture
+- **Backend API:** `http://localhost:5000`
+- **Frontend:** `http://localhost:3000`
+- **Admin Dashboard:** `http://localhost:3000/admin`
+- **Database:** SQLite (local file)
+- **Email:** Gmail SMTP (configured)
 
 ### Environment Setup
 - Copy `backend/.env.production.example` for production environment variables
