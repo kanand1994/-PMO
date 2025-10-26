@@ -2,18 +2,31 @@
 set -e
 
 echo "🏗️ Building Plan My Outings..."
+echo "Current directory: $(pwd)"
+echo "Directory contents:"
+ls -la
 
 # Build frontend
 echo "📦 Building frontend..."
-cd frontend
-npm install
-npm run build
-cd ..
+if [ -d "frontend" ]; then
+    cd frontend
+    npm install
+    npm run build
+    cd ..
+    echo "✅ Frontend build complete!"
+else
+    echo "❌ Frontend directory not found!"
+    exit 1
+fi
 
 # Install backend dependencies
 echo "🐍 Installing backend dependencies..."
-cd backend
-pip install -r requirements.txt
-cd ..
+if [ -d "backend" ]; then
+    pip install -r backend/requirements.txt
+    echo "✅ Backend dependencies installed!"
+else
+    echo "❌ Backend directory not found!"
+    exit 1
+fi
 
 echo "✅ Build complete!"
