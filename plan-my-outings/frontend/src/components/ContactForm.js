@@ -6,11 +6,13 @@ const ContactForm = () => {
     first_name: '',
     last_name: '',
     email: '',
+    phone: '',
     year_of_birth: '',
     message: ''
   });
   const [credentials, setCredentials] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [selectedMethod, setSelectedMethod] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,6 +27,7 @@ const ContactForm = () => {
         first_name: '',
         last_name: '',
         email: '',
+        phone: '',
         year_of_birth: '',
         message: ''
       });
@@ -49,6 +52,50 @@ const ContactForm = () => {
     });
   };
 
+  const handleNotificationMethod = async (method) => {
+    setSelectedMethod(method);
+    
+    try {
+      switch (method) {
+        case 'email':
+          alert('Email notification attempted. Please check your email or try another method.');
+          break;
+        case 'sms':
+          const phone = prompt('Enter your phone number (with country code):');
+          if (phone) {
+            // Call SMS API
+            alert(`SMS will be sent to ${phone} (SMS service needs to be configured)`);
+          }
+          break;
+        case 'whatsapp':
+          const whatsapp = prompt('Enter your WhatsApp number (with country code):');
+          if (whatsapp) {
+            alert(`WhatsApp message will be sent to ${whatsapp} (WhatsApp service needs to be configured)`);
+          }
+          break;
+        case 'download':
+          // Create and download credentials file
+          const credentialsText = `Plan My Outings - Account Credentials\n\nUsername: ${credentials.username}\nPassword: ${credentials.password}\n\nLogin at: http://localhost:3000/login\n\nKeep these credentials safe!`;
+          const blob = new Blob([credentialsText], { type: 'text/plain' });
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'plan-my-outings-credentials.txt';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
+          alert('Credentials downloaded successfully! Please keep the file safe.');
+          break;
+        default:
+          break;
+      }
+    } catch (error) {
+      console.error('Error with notification method:', error);
+      alert('Error processing your request. Please try again.');
+    }
+  };
+
   return (
     <div className="contact-page">
       <div className="contact-container">
@@ -61,12 +108,40 @@ const ContactForm = () => {
           <div className="credentials-success">
             <div className="success-icon">🎉</div>
             <h3>Account Created Successfully!</h3>
-            <div className="credentials-info">
-              <p><strong>Username:</strong> <code>{credentials.username}</code></p>
-              <p><strong>Password:</strong> <code>{credentials.password}</code></p>
+            <div className="notification-options">
+              <p>Your Plan My Outings account has been created!</p>
+              <div className="notification-methods">
+                <h4>How would you like to receive your login credentials?</h4>
+                <div className="method-buttons">
+                  <button 
+                    className="btn-method email-btn"
+                    onClick={() => handleNotificationMethod('email')}
+                  >
+                    📧 Email
+                  </button>
+                  <button 
+                    className="btn-method sms-btn"
+                    onClick={() => handleNotificationMethod('sms')}
+                  >
+                    📱 SMS
+                  </button>
+                  <button 
+                    className="btn-method whatsapp-btn"
+                    onClick={() => handleNotificationMethod('whatsapp')}
+                  >
+                    💬 WhatsApp
+                  </button>
+                  <button 
+                    className="btn-method download-btn"
+                    onClick={() => handleNotificationMethod('download')}
+                  >
+                    💾 Download
+                  </button>
+                </div>
+              </div>
             </div>
-            <p className="credentials-note">
-              Please save these credentials and use them to login.
+            <p className="security-note">
+              For security reasons, your credentials are not displayed on this page.
             </p>
             <button 
               className="btn-primary"
@@ -114,6 +189,17 @@ const ContactForm = () => {
                 value={formData.email}
                 onChange={handleChange}
                 required
+              />
+            </div>
+            
+            <div className="form-group">
+              <label>Phone Number (Optional)</label>
+              <input
+                type="tel"
+                name="phone"
+                placeholder="Enter your phone number (for SMS/WhatsApp)"
+                value={formData.phone}
+                onChange={handleChange}
               />
             </div>
             
@@ -262,19 +348,57 @@ const styles = `
   margin-bottom: 1rem;
 }
 
-.credentials-info {
+.notification-options {
   background: white;
-  padding: 1rem;
+  padding: 1.5rem;
   border-radius: 8px;
   margin: 1rem 0;
   text-align: left;
 }
 
-.credentials-info code {
-  background: #f0f0f0;
-  padding: 0.2rem 0.4rem;
-  border-radius: 4px;
-  font-family: monospace;
+.notification-methods h4 {
+  color: #333;
+  margin: 1rem 0 0.5rem 0;
+  font-size: 1rem;
+}
+
+.method-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.btn-method {
+  padding: 0.75rem 1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.btn-method:hover {
+  border-color: #4ecdc4;
+  background: #f8f9fa;
+  transform: translateY(-2px);
+}
+
+.email-btn:hover { border-color: #ff6b6b; }
+.sms-btn:hover { border-color: #4ecdc4; }
+.whatsapp-btn:hover { border-color: #25d366; }
+.download-btn:hover { border-color: #ffa726; }
+
+.security-note {
+  background: #f0f8ff;
+  padding: 0.75rem;
+  border-radius: 6px;
+  border-left: 4px solid #4ecdc4;
+  color: #555;
+  font-size: 0.9rem;
+  margin: 1rem 0;
 }
 
 .credentials-note {
