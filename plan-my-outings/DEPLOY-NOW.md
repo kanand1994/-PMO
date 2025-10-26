@@ -38,11 +38,18 @@ git push -u origin main
 4. **Environment Variables:**
    ```
    FLASK_ENV=production
-   SECRET_KEY=your-secret-key-123
-   MAIL_USERNAME=your-email@gmail.com
-   MAIL_PASSWORD=your-gmail-app-password
+   SECRET_KEY=plan-my-outings-secret-key-2025
+   JWT_SECRET_KEY=plan-my-outings-jwt-key-2025
+   MAIL_SERVER=smtp.gmail.com
+   MAIL_PORT=587
+   MAIL_USE_TLS=true
+   MAIL_USERNAME=outingplanmy@gmail.com
+   MAIL_PASSWORD=ckkymhmweqvrtrfz
    SUPER_ADMIN_USERNAME=superadmin
-   SUPER_ADMIN_PASSWORD=admin123
+   SUPER_ADMIN_PASSWORD=SuperAdmin@2025
+   SUPER_ADMIN_EMAIL=planmyouting@outlook.com
+   SUPER_ADMIN_FIRST_NAME=Super
+   SUPER_ADMIN_LAST_NAME=Admin
    ```
 
 5. **Deploy!** → Wait 5-8 minutes
@@ -65,7 +72,7 @@ git push -u origin main
 
 - **URL:** `https://your-app.onrender.com/admin`
 - **Username:** `superadmin`
-- **Password:** `admin123`
+- **Password:** `SuperAdmin@2025`
 
 ---
 
