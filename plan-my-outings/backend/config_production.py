@@ -13,20 +13,20 @@ class ProductionConfig:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Security
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'your-production-secret-key-change-this'
-    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'your-jwt-secret-key-change-this'
+    SECRET_KEY = os.environ.get('SECRET_KEY') or 'plan-my-outings-secret-key-2025'
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'plan-my-outings-jwt-key-2025'
     
-    # Email Configuration
+    # Email Configuration - Use plain text values in production
     MAIL_SERVER = os.environ.get('MAIL_SERVER') or 'smtp.gmail.com'
     MAIL_PORT = int(os.environ.get('MAIL_PORT') or 587)
     MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'true').lower() in ['true', 'on', '1']
-    MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
-    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME') or 'outingplanmy@gmail.com'
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD') or 'ckkymhmweqvrtrfz'
     
-    # Super Admin Configuration
+    # Super Admin Configuration - Use plain text values in production
     SUPER_ADMIN_USERNAME = os.environ.get('SUPER_ADMIN_USERNAME') or 'superadmin'
-    SUPER_ADMIN_PASSWORD = os.environ.get('SUPER_ADMIN_PASSWORD') or 'admin123'
-    SUPER_ADMIN_EMAIL = os.environ.get('SUPER_ADMIN_EMAIL') or 'admin@planmyoutings.com'
+    SUPER_ADMIN_PASSWORD = os.environ.get('SUPER_ADMIN_PASSWORD') or 'SuperAdmin@2025'
+    SUPER_ADMIN_EMAIL = os.environ.get('SUPER_ADMIN_EMAIL') or 'planmyouting@outlook.com'
     SUPER_ADMIN_FIRST_NAME = os.environ.get('SUPER_ADMIN_FIRST_NAME') or 'Super'
     SUPER_ADMIN_LAST_NAME = os.environ.get('SUPER_ADMIN_LAST_NAME') or 'Admin'
     

@@ -676,40 +676,54 @@ This email was resent to {user.email} by system administrator.
 def create_super_admin():
     """Create super admin account if it doesn't exist"""
     try:
+        # Get super admin username, handle None case
+        admin_username = app.config.get('SUPER_ADMIN_USERNAME')
+        if not admin_username:
+            print("⚠️ No super admin username configured")
+            return
+            
         # Check if super admin already exists
-        super_admin = User.query.filter_by(username=app.config['SUPER_ADMIN_USERNAME']).first()
+        super_admin = User.query.filter_by(username=admin_username).first()
         
-        if not super_admin and app.config['SUPER_ADMIN_USERNAME']:
+        if not super_admin:
+            # Get all required fields with fallbacks
+            admin_password = app.config.get('SUPER_ADMIN_PASSWORD') or 'SuperAdmin@2025'
+            admin_email = app.config.get('SUPER_ADMIN_EMAIL') or 'planmyouting@outlook.com'
+            admin_first_name = app.config.get('SUPER_ADMIN_FIRST_NAME') or 'Super'
+            admin_last_name = app.config.get('SUPER_ADMIN_LAST_NAME') or 'Admin'
+            
             super_admin = User(
-                username=app.config['SUPER_ADMIN_USERNAME'],
-                password=app.config['SUPER_ADMIN_PASSWORD'],
-                email=app.config['SUPER_ADMIN_EMAIL'],
-                first_name=app.config['SUPER_ADMIN_FIRST_NAME'],
-                last_name=app.config['SUPER_ADMIN_LAST_NAME'],
+                username=admin_username,
+                password=admin_password,
+                email=admin_email,
+                first_name=admin_first_name,
+                last_name=admin_last_name,
                 year_of_birth=1990  # Default year
             )
             db.session.add(super_admin)
             db.session.commit()
-            print(f"✅ Super admin created: {app.config['SUPER_ADMIN_USERNAME']}")
+            print(f"✅ Super admin created: {admin_username}")
             
-            # Send welcome email to super admin
-            if app.config['MAIL_USERNAME'] and app.config['MAIL_PASSWORD']:
+            # Send welcome email to super admin (only if email config is available)
+            mail_username = app.config.get('MAIL_USERNAME')
+            mail_password = app.config.get('MAIL_PASSWORD')
+            
+            if mail_username and mail_password:
                 try:
                     msg = Message(
                         subject='Plan My Outings - Super Admin Account Created',
-                        sender=app.config['MAIL_USERNAME'],
-                        recipients=[app.config['SUPER_ADMIN_EMAIL']]
+                        sender=mail_username,
+                        recipients=[admin_email]
                     )
                     msg.body = f"""
 Super Admin Account Setup Complete
 
 Your super admin credentials:
-Username: {app.config['SUPER_ADMIN_USERNAME']}
-Password: {app.config['SUPER_ADMIN_PASSWORD']}
+Username: {admin_username}
+Password: {admin_password}
 
 Admin Access:
-- Web Dashboard: http://localhost:3000/admin
-- CLI Database Access: python cli_admin.py
+- Web Dashboard: /admin
 - API Access: All endpoints with admin privileges
 
 Keep these credentials secure!
@@ -718,14 +732,14 @@ Plan My Outings System
                     """
                     mail.send(msg)
                     # Log super admin email
-                    EmailTracker.log_email_sent(app.config['SUPER_ADMIN_EMAIL'], 'Plan My Outings - Super Admin Account Created', 'admin_setup')
+                    EmailTracker.log_email_sent(admin_email, 'Plan My Outings - Super Admin Account Created', 'admin_setup')
                     print("✅ Super admin welcome email sent")
                 except Exception as e:
                     # Log failed super admin email
-                    EmailTracker.log_email_failed(app.config['SUPER_ADMIN_EMAIL'], 'Plan My Outings - Super Admin Account Created', 'admin_setup', str(e))
+                    EmailTracker.log_email_failed(admin_email, 'Plan My Outings - Super Admin Account Created', 'admin_setup', str(e))
                     print(f"⚠️ Could not send super admin email: {e}")
         else:
-            print(f"ℹ️ Super admin already exists: {app.config['SUPER_ADMIN_USERNAME']}")
+            print(f"✅ Super admin already exists: {admin_username}")
             
     except Exception as e:
         print(f"❌ Error creating super admin: {e}")

@@ -14,32 +14,40 @@ class Config:
     MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'True').lower() == 'true'
     MAIL_USE_SSL = os.environ.get('MAIL_USE_SSL', 'False').lower() == 'true'
     
-    # Decrypt email username if encrypted
+    # Decrypt email username if encrypted (only in development)
     @staticmethod
     def _decrypt_email_username():
         username = os.environ.get('MAIL_USERNAME')
+        # In production, use plain text values
+        if os.environ.get('FLASK_ENV') == 'production':
+            return username
+        # In development, try to decrypt if encrypted
         if username and username.startswith('ENC:'):
             try:
                 from encryption_utils import decrypt_env_password
                 return decrypt_env_password(username)
             except Exception as e:
                 print(f"Error decrypting email username: {e}")
-                return None
+                return 'outingplanmy@gmail.com'  # fallback
         return username
     
     MAIL_USERNAME = _decrypt_email_username()
     
-    # Decrypt email password if encrypted
+    # Decrypt email password if encrypted (only in development)
     @staticmethod
     def _decrypt_password():
         password = os.environ.get('MAIL_PASSWORD')
+        # In production, use plain text values
+        if os.environ.get('FLASK_ENV') == 'production':
+            return password
+        # In development, try to decrypt if encrypted
         if password and password.startswith('ENC:'):
             try:
                 from encryption_utils import decrypt_env_password
                 return decrypt_env_password(password)
             except Exception as e:
                 print(f"Error decrypting email password: {e}")
-                return None
+                return 'ckkymhmweqvrtrfz'  # fallback
         return password
     
     MAIL_PASSWORD = _decrypt_password()
@@ -49,21 +57,25 @@ class Config:
     TMDB_API_KEY = os.environ.get('TMDB_API_KEY')
     OPENWEATHER_API_KEY = os.environ.get('OPENWEATHER_API_KEY')
     
-    # Super Admin Configuration (Encrypted)
+    # Super Admin Configuration (Encrypted in dev, plain text in production)
     @staticmethod
-    def _decrypt_admin_field(field_name):
+    def _decrypt_admin_field(field_name, fallback_value):
         value = os.environ.get(field_name)
+        # In production, use plain text values
+        if os.environ.get('FLASK_ENV') == 'production':
+            return value or fallback_value
+        # In development, try to decrypt if encrypted
         if value and value.startswith('ENC:'):
             try:
                 from encryption_utils import decrypt_env_password
                 return decrypt_env_password(value)
             except Exception as e:
                 print(f"Error decrypting {field_name}: {e}")
-                return None
-        return value
+                return fallback_value
+        return value or fallback_value
     
-    SUPER_ADMIN_EMAIL = _decrypt_admin_field('SUPER_ADMIN_EMAIL')
-    SUPER_ADMIN_USERNAME = _decrypt_admin_field('SUPER_ADMIN_USERNAME')
-    SUPER_ADMIN_PASSWORD = _decrypt_admin_field('SUPER_ADMIN_PASSWORD')
-    SUPER_ADMIN_FIRST_NAME = _decrypt_admin_field('SUPER_ADMIN_FIRST_NAME')
-    SUPER_ADMIN_LAST_NAME = _decrypt_admin_field('SUPER_ADMIN_LAST_NAME')
+    SUPER_ADMIN_EMAIL = _decrypt_admin_field('SUPER_ADMIN_EMAIL', 'planmyouting@outlook.com')
+    SUPER_ADMIN_USERNAME = _decrypt_admin_field('SUPER_ADMIN_USERNAME', 'superadmin')
+    SUPER_ADMIN_PASSWORD = _decrypt_admin_field('SUPER_ADMIN_PASSWORD', 'SuperAdmin@2025')
+    SUPER_ADMIN_FIRST_NAME = _decrypt_admin_field('SUPER_ADMIN_FIRST_NAME', 'Super')
+    SUPER_ADMIN_LAST_NAME = _decrypt_admin_field('SUPER_ADMIN_LAST_NAME', 'Admin')
